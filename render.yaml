@@ -1,0 +1,60 @@
+services:
+  - type: web
+    name: postbridge
+    env: docker
+    region: oregon
+    plan: starter
+    branch: main
+    dockerCommand: docker-compose up
+    envVars:
+      - key: RENDER_EXTERNAL_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postbridge-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: postbridge-redis
+          type: redis
+          property: connectionString
+      - key: IS_GENERAL
+        value: "true"
+      - key: STORAGE_PROVIDER
+        value: "local"
+      - key: UPLOAD_DIRECTORY
+        value: "/uploads"
+      - key: NEXT_PUBLIC_UPLOAD_DIRECTORY
+        value: "/uploads"
+      - key: BACKEND_INTERNAL_URL
+        value: "http://localhost:3000"
+    disk:
+      name: postbridge-uploads
+      mountPath: /uploads
+      sizeGB: 10
+
+  - type: pserv
+    name: postbridge-db
+    env: docker
+    region: oregon
+    plan: starter
+    image: postgres:17-alpine
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+    envVars:
+      - key: POSTGRES_USER
+        value: postiz-user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: postiz-db
+
+  - type: redis
+    name: postbridge-redis
+    ipAllowList: []
+    plan: starter
+    region: oregon 
